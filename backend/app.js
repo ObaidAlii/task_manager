@@ -4,10 +4,14 @@ require("dotenv").config();
 const userRoute = require("./routes/userRoutes");
 const taskRoute = require("./routes/taskRoutes");
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://taskmanager-frontend-wn3t.onrender.com",
+];
 const app = express();
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: allowedOrigins,
     credentials: true,
   })
 );
