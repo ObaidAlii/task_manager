@@ -5,10 +5,10 @@ const createTask = async (title, description, status, deadline, userid) => {
     .from("tasks")
     .insert([{ title, description, status, deadline, userid }])
     .select()
-    .single();
+    .limit(1);
 
   if (error) throw error;
-  return data;
+  return data?.[0] || null;
 };
 
 const findTasks = async (userid) => {
@@ -18,7 +18,7 @@ const findTasks = async (userid) => {
     .eq("userid", userid);
 
   if (error) throw error;
-  return data;
+  return data || [];
 };
 
 const getTaskById = async (id, userid) => {
@@ -27,10 +27,10 @@ const getTaskById = async (id, userid) => {
     .select("*")
     .eq("id", id)
     .eq("userid", userid)
-    .single();
+    .limit(1);
 
   if (error) throw error;
-  return data;
+  return data?.[0] || null;
 };
 
 const deleteTask = async (id, userid) => {
@@ -40,10 +40,10 @@ const deleteTask = async (id, userid) => {
     .eq("id", id)
     .eq("userid", userid)
     .select()
-    .single();
+    .limit(1);
 
   if (error) throw error;
-  return data;
+  return data?.[0] || null;
 };
 
 const updateTask = async (title, description, status, deadline, userid, id) => {
@@ -59,10 +59,10 @@ const updateTask = async (title, description, status, deadline, userid, id) => {
     .eq("id", id)
     .eq("userid", userid)
     .select()
-    .single();
+    .limit(1);
 
   if (error) throw error;
-  return data;
+  return data?.[0] || null;
 };
 
 module.exports = {

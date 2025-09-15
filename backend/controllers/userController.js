@@ -39,7 +39,7 @@ const googleAuth = async (req, res) => {
 
     return res.status(200).json({ token });
   } catch (err) {
-    console.error("Google Auth Error:", err);
+    console.error("Google Auth Error:", err.message || err);
     return res.status(500).json({ message: "Google auth failed" });
   }
 };
@@ -61,7 +61,7 @@ const registerUser = async (req, res) => {
 
     return res.status(201).json({ message: "User registered successfully." });
   } catch (err) {
-    console.error("Error registering user:", err);
+    console.error("Error registering user:", err.message || err);
     return res.status(500).json({ message: "Server error." });
   }
 };
@@ -80,6 +80,12 @@ const loginUser = async (req, res) => {
         .json({ message: "Email not found, please register first." });
     }
 
+    if (!registeredUser.password) {
+      return res
+        .status(400)
+        .json({ message: "This account uses Google login." });
+    }
+
     const valid = await bcrypt.compare(password, registeredUser.password);
     if (!valid) {
       return res.status(401).json({ message: "Incorrect Password!" });
@@ -93,7 +99,7 @@ const loginUser = async (req, res) => {
 
     return res.status(200).json({ token });
   } catch (err) {
-    console.error("Error logging in user:", err);
+    console.error("Error logging in user:", err.message || err);
     return res.status(500).json({ message: "Server error." });
   }
 };

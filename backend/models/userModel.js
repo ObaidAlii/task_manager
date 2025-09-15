@@ -5,10 +5,10 @@ const createUser = async (name, email, hashedPassword) => {
     .from("users")
     .insert([{ name, email, password: hashedPassword }])
     .select()
-    .single();
+    .limit(1);
 
   if (error) throw error;
-  return data;
+  return data?.[0] || null;
 };
 
 const findUser = async (email) => {
@@ -16,10 +16,10 @@ const findUser = async (email) => {
     .from("users")
     .select("*")
     .eq("email", email)
-    .single();
+    .limit(1);
 
   if (error) throw error;
-  return data;
+  return data?.[0] || null;
 };
 
 module.exports = { createUser, findUser };
