@@ -1,10 +1,10 @@
 const bcrypt = require("bcrypt");
 const { OAuth2Client } = require("google-auth-library");
 const jwt = require("jsonwebtoken");
-const pgPool = require("../db_config/postgresConnection");
+const { createUser, findUser } = require("../models/userModel");
+
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const secretKey = process.env.JWT_SECRET;
-const { createUser, findUser } = require("../models/userModel");
 
 const googleAuth = async (req, res) => {
   try {
@@ -16,6 +16,7 @@ const googleAuth = async (req, res) => {
       idToken,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
+
     const payload = ticket.getPayload();
     const email = payload?.email;
     const name = payload?.name || email?.split("@")[0];
@@ -26,41 +27,20 @@ const googleAuth = async (req, res) => {
       return res.status(400).json({ message: "Unverified Google Account." });
     }
 
-    //finding user in db if present
-    let userResult = await pgPool.query(
-      "SELECT * FROM users WHERE email = $1",
-      [email]
-    );
-    let user = userResult.rows[0];
+    let user = await findUser(email);
 
-    //adding user to db if not present
     if (!user) {
-      const insert = await pgPool.query(
-        "INSERT INTO users (name, email, password, provider, google_id) values ($1, $2, $3, $4, $5) RETURNING id, name, email, provider, google_id",
-        [name, email, null, "google", googleId]
-      );
-      user = insert.rows[0];
-    } else {
-      if (!user.google_id) {
-        await pgPool.query("UPDATE users set google_id = $1 where id = $2", [
-          googleId,
-          user.id,
-        ]);
-      }
+      user = await createUser(name, email, null, "google", googleId);
     }
 
-    const token = jwt.sign(
-      {
-        userid: user.id,
-        email: user.email,
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-    res.status(200).json({ token });
+    const token = jwt.sign({ userid: user.id, email: user.email }, secretKey, {
+      expiresIn: "7d",
+    });
+
+    return res.status(200).json({ token });
   } catch (err) {
     console.error("Google Auth Error:", err);
-    res.status(500).json({ message: "Google auth failed" });
+    return res.status(500).json({ message: "Google auth failed" });
   }
 };
 
@@ -73,11 +53,13 @@ const registerUser = async (req, res) => {
 
     const registeredUser = await findUser(email);
     if (registeredUser) {
-      res.status(400).json({ message: "User already registered." });
+      return res.status(400).json({ message: "User already registered." });
     }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     await createUser(name, email, hashedPassword);
-    res.status(201).json({ message: "User registered successfully." });
+
+    return res.status(201).json({ message: "User registered successfully." });
   } catch (err) {
     console.error("Error registering user:", err);
     return res.status(500).json({ message: "Server error." });
@@ -93,14 +75,14 @@ const loginUser = async (req, res) => {
 
     const registeredUser = await findUser(email);
     if (!registeredUser) {
-      res
+      return res
         .status(401)
         .json({ message: "Email not found, please register first." });
     }
 
     const valid = await bcrypt.compare(password, registeredUser.password);
     if (!valid) {
-      res.status(401).json({ message: "Incorrect Password!" });
+      return res.status(401).json({ message: "Incorrect Password!" });
     }
 
     const token = jwt.sign(
@@ -108,7 +90,8 @@ const loginUser = async (req, res) => {
       secretKey,
       { expiresIn: "7d" }
     );
-    res.status(200).json({ token });
+
+    return res.status(200).json({ token });
   } catch (err) {
     console.error("Error logging in user:", err);
     return res.status(500).json({ message: "Server error." });

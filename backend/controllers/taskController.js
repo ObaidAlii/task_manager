@@ -19,12 +19,13 @@ const createTask = async (req, res) => {
       userId
     );
 
-    res
-      .status(200)
-      .json({ message: "Task creation successful.", task: newTask });
+    res.status(201).json({
+      message: "Task created successfully.",
+      task: newTask,
+    });
   } catch (err) {
-    console.error("Error creating task:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error creating task:", err.message || err);
+    res.status(500).json({ message: "Failed to create task." });
   }
 };
 
@@ -34,8 +35,8 @@ const getAllTasks = async (req, res) => {
     const tasks = await taskModel.findTasks(userId);
     res.status(200).json({ tasks });
   } catch (err) {
-    console.error("Error fetching tasks: ", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error fetching tasks:", err.message || err);
+    res.status(500).json({ message: "Failed to fetch tasks." });
   }
 };
 
@@ -50,8 +51,8 @@ const getTask = async (req, res) => {
     }
     res.status(200).json(task);
   } catch (err) {
-    console.error("Error fetching task: ", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error fetching task:", err.message || err);
+    res.status(500).json({ message: "Failed to fetch task." });
   }
 };
 
@@ -75,12 +76,14 @@ const updateTask = async (req, res) => {
         .status(404)
         .json({ message: "Task not found or unauthorized." });
     }
-    res
-      .status(200)
-      .json({ message: "Task updated successfully", task: updatedTask });
+
+    res.status(200).json({
+      message: "Task updated successfully.",
+      task: updatedTask,
+    });
   } catch (err) {
-    console.error("Error updating task: ", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error updating task:", err.message || err);
+    res.status(500).json({ message: "Failed to update task." });
   }
 };
 
@@ -94,15 +97,23 @@ const deleteTask = async (req, res) => {
     if (!deletedTask) {
       return res
         .status(404)
-        .json({ message: "Task not found or unauthorized" });
+        .json({ message: "Task not found or unauthorized." });
     }
-    res
-      .status(200)
-      .json({ message: "Task deleted successfully", task: deletedTask });
+
+    res.status(200).json({
+      message: "Task deleted successfully.",
+      task: deletedTask,
+    });
   } catch (err) {
-    console.error("Error deleting task: ", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("Error deleting task:", err.message || err);
+    res.status(500).json({ message: "Failed to delete task." });
   }
 };
 
-module.exports = { createTask, getAllTasks, getTask, updateTask, deleteTask };
+module.exports = {
+  createTask,
+  getAllTasks,
+  getTask,
+  updateTask,
+  deleteTask,
+};

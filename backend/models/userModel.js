@@ -1,18 +1,25 @@
-const pgPool = require("../db_config/postgresConnection");
+const supabase = require("../db_config/postgresConnection");
 
 const createUser = async (name, email, hashedPassword) => {
-  const result = await pgPool.query(
-    `INSERT INTO users(name, email, password) VALUES($1, $2, $3) RETURNING *`,
-    [name, email, hashedPassword]
-  );
-  return result.rows[0];
+  const { data, error } = await supabase
+    .from("users")
+    .insert([{ name, email, password: hashedPassword }])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
 };
 
 const findUser = async (email) => {
-  const result = await pgPool.query(`SELECT * FROM users WHERE email = $1`, [
-    email,
-  ]);
-  return result.rows[0];
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("email", email)
+    .single();
+
+  if (error) throw error;
+  return data;
 };
 
 module.exports = { createUser, findUser };
